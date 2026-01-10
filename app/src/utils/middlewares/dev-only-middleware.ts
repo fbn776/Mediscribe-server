@@ -6,5 +6,7 @@ export default function devOnlyMiddleware(req: Request, res: Response, next: Nex
         return res.status(403).json({ message: 'This route is only accessible in development mode.' });
     }
 
+    console.log("NEXT", next)
+
     next();
 }

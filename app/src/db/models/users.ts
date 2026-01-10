@@ -1,10 +1,9 @@
 import mongoose from 'mongoose';
-import mongoose_delete from 'mongoose-delete';
 
 const userSchema = new mongoose.Schema({
     name: String,
     phone: String,
-    email: String,
+    email: {type: String, required: true},
     secrets: {
         password: String,
         otp: {
@@ -20,7 +19,6 @@ const userSchema = new mongoose.Schema({
 },
     { timestamps: true })
 
-userSchema.plugin(mongoose_delete, { deletedAt: true });
 
 
 const Users = mongoose.model('users', userSchema);

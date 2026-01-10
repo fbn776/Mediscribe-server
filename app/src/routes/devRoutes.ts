@@ -27,10 +27,10 @@ const USER_TYPES = [
 
 devRouter.post("/dev/seed/admin-user", devOnlyMiddleware, async (req, res) => {
     try {
-        const {email = "admin@demo.com", password = "admin@123", name = "admin"} = req.body;
-
+        const {email = "admin@demo.com", password = "admin@123", name = "admin"} = req?.body || {email: "admin@demo.com", password: "admin@123", name: "admin"};
 
         let hashedPassword = bcrypt.hashSync(password, 10);
+
         let newUser = new Users({
             email: email,
             name: name,
@@ -49,6 +49,7 @@ devRouter.post("/dev/seed/admin-user", devOnlyMiddleware, async (req, res) => {
             }
         });
     } catch (error) {
+        console.error(error);
         res.status(500).send({"success": false, "status": 500, "message": "Seeding failed", "data": null});
     }
 });
