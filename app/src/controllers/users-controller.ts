@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import type {Request, Response} from 'express';
-import * as userManagers from '../managers/userManagers';
 import Users from '../db/models/users';
 import UserTypes from "../db/models/user-types";
 import {error_function, success_function} from "../utils/response-handler";
@@ -13,7 +12,13 @@ import sendEmail from "../utils/email-manager";
 export const fetchUser = async function (req: Request, res: Response) {
     try {
         let id = req.params.id;
-        let user = await userManagers.fetchUser({id: id});
+        let user = Users.findOne({_id: id}, '-secrets')
+            .populate('type', '_id title type_id')
+            .populate({
+                path: 'added_by', select: '_id name type',
+                populate: {path: 'type', select: '_id title'}
+            });
+
         if (user) {
             let response = success_function({"status": 200, data: user});
             res.status(200).send(response);
@@ -211,10 +216,6 @@ export async function verifyOtp(req: Request, res: Response) {
 
         if (!user) {
             return res.status(401).send(error_function({status: 401, message: "Unauthorized"}));
-        }
-
-        if (user.profile_verified) {
-            return res.status(400).send(error_function({status: 400, message: "Profile already verified"}));
         }
 
         if (!user.secrets.otp || !user.secrets.otp.code || !user.secrets.otp.expires_at) {

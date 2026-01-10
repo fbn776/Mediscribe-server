@@ -3,12 +3,11 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import morgan from "morgan";
 import {connectDB} from "./db/config";
-import authRouter from "./routes/authRoutes";
-import userRouter from "./routes/usersRoutes";
-import fs from "fs";
+import authRouter from "./routes/auth-routes";
+import userRouter from "./routes/users-routes";
 import http from "http";
 import {dev_websocket_logger} from "./dev/logs/dev_websocket_logger";
-import devRouter from "./routes/devRoutes";
+import devRouter from "./routes/dev-routes";
 
 require('dotenv').config();
 
@@ -40,20 +39,7 @@ if (env === "development") {
     app.use('/dev', express.static(__dirname + '/dev'));
 }
 
-//creating folders and files for ticket storing and log saving
-if (!fs.existsSync('./logs')) fs.mkdirSync('./logs', {recursive: true});
-if (!fs.existsSync('./logs/api-logs.txt')) fs.open('./logs/api-logs.txt', 'w', (error, file) => {
-    if (error) console.log(error)
-});
-if (!fs.existsSync('./logs/email-logs.txt')) fs.open('./logs/email-logs.txt', 'w', (error, file) => {
-    if (error) console.log(error)
-});
-if (!fs.existsSync('./logs/sms-logs.txt')) fs.open('./logs/sms-logs.txt', 'w', (error, file) => {
-    if (error) console.log(error)
-});
-
 connectDB();
-
 
 //Invoking server port connection
 server.listen(process.env.NODE_PORT, () => {
