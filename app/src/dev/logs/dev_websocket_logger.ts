@@ -1,9 +1,7 @@
 import {type WebSocket, WebSocketServer} from "ws";
 
-export function dev_websocket_logger(env: string = process.env.ENVIRONMENT || "development", server?: any) {
+export function dev_websocket_logger(env: string = process.env.ENVIRONMENT || "development", wss: WebSocketServer) {
     if (env === "development") {
-        const wss = new WebSocketServer({server});
-
         const logSubscribers = new Set<WebSocket>();
         const originalStdoutWrite = process.stdout.write.bind(process.stdout);
         const originalStderrWrite = process.stderr.write.bind(process.stderr);

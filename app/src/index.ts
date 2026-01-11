@@ -8,6 +8,10 @@ import userRouter from "./routes/users-routes";
 import http from "http";
 import {dev_websocket_logger} from "./dev/logs/dev_websocket_logger";
 import devRouter from "./routes/dev-routes";
+import patientsRoutes from "./routes/patients-routes";
+import sessionRoutes from "./routes/session-routes";
+import {WebSocketServer} from "ws";
+import initClientSttGatewayWebSocket from "./websocket/client-stt-gateway";
 
 require('dotenv').config();
 
@@ -15,19 +19,29 @@ const app = express();
 
 const server = http.createServer(app);
 const env = process.env.ENVIRONMENT || 'development';
+
+const wss = new WebSocketServer({server});
+
 if (env === 'development') {
     app.use(morgan('dev'));
-    dev_websocket_logger(env, server);
+    dev_websocket_logger(env, wss);
 }
+
+// delay: TODO - for testing purposes only
+// app.use(function (req, res, next) {
+//     setTimeout(next, 1000);
+// });
 
 app.use(bodyParser.json({limit: '100mb'}));
 app.use(bodyParser.urlencoded({limit: '100mb', extended: true}));
 app.use(express.json());
+
 app.use(cors({
-    "origin": "*",
-    "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
-    "preflightContinue": false,
-    "optionsSuccessStatus": 204
+    origin: ["http://localhost:3000"],
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+    credentials: true,
 }));
 
 app.use('/system_generated', express.static(__dirname + '/system_generated'));
@@ -64,6 +78,10 @@ app.get('/is-dev', (req, res) => {
 
 app.use(authRouter);
 app.use(userRouter);
+app.use(patientsRoutes);
+app.use(sessionRoutes);
+
+initClientSttGatewayWebSocket(wss);
 
 if( env === 'development'){
     app.use(devRouter);

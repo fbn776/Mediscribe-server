@@ -46,7 +46,7 @@ export async function register(req: Request, res: Response) {
 }
 
 export async function login(req: Request, res: Response) {
-    const {email, password} = req.body;
+    const {email, password} = req?.body;
 
     if (!email || !password) {
         let response = error_function({"status": 400, "message": "Email and password are required"});
