@@ -14,6 +14,9 @@ importers:
       '@mastra/core':
         specifier: ^0.24.9
         version: 0.24.9(openapi-types@12.1.3)(react@19.2.3)(zod@4.3.5)
+      '@mastra/voice-openai-realtime':
+        specifier: ^0.12.1
+        version: 0.12.1(@mastra/core@0.24.9(openapi-types@12.1.3)(react@19.2.3)(zod@4.3.5))(zod@4.3.5)
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
@@ -787,6 +790,13 @@ packages:
     resolution: {integrity: sha512-UrX4I/hgL8twg/Ddb+sCIMvlIq3PSJloXEmUKnMdLT/bUWzE52eZ1dSaJp0ehgkCiadZPZxBY5UzUjUD/xP0EQ==}
     peerDependencies:
       '@mastra/core': '>=0.24.0-0 <0.25.0-0'
+      zod: ^3.25.0 || ^4.0.0
+
+  '@mastra/voice-openai-realtime@0.12.1':
+    resolution: {integrity: sha512-h46x+Vz96dcHIACdNX5ohszzDXe6hf4TgW7qUsU0gUE4oWeXYTeF9A22DPuDu7+7yqpyKjEbV47mxf1Jy0drXg==}
+    engines: {node: '>=22.13.0'}
+    peerDependencies:
+      '@mastra/core': '>=1.0.0-0 <2.0.0-0'
       zod: ^3.25.0 || ^4.0.0
 
   '@mongodb-js/saslprep@1.4.4':
@@ -3560,6 +3570,11 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
+  nanoid@5.1.6:
+    resolution: {integrity: sha512-c7+7RQ+dMB5dPwwCp4ee1/iV/q2P6aK1mTZcfr1BTuVlyW9hJYiMPybJCcnBlQtuSmTIWNeazm/zqNoZSSElBg==}
+    engines: {node: ^18 || >=20}
+    hasBin: true
+
   negotiator@0.6.3:
     resolution: {integrity: sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==}
     engines: {node: '>= 0.6'}
@@ -3648,6 +3663,10 @@ packages:
 
   open@10.2.0:
     resolution: {integrity: sha512-YgBpdJHPyQ2UE5x+hlSXcnejzAvD0b22U2OuAP+8OnlJT+PjWPxtgmGqKKc+RgTM63U9gN0YzrYc71R2WT/hTA==}
+    engines: {node: '>=18'}
+
+  openai-realtime-api@1.0.8:
+    resolution: {integrity: sha512-/PC/RY8/9E03IB8w61D0Grwg9fh7fcehH63BDA3Mv2hQUjPtGvx5+9CFQ9s105oSk6ag1hAzDlUBAS4uwrCu1A==}
     engines: {node: '>=18'}
 
   openapi-types@12.1.3:
@@ -5563,6 +5582,17 @@ snapshots:
     dependencies:
       '@mastra/core': 0.24.9(openapi-types@12.1.3)(react@19.2.3)(zod@4.3.5)
       zod: 4.3.5
+
+  '@mastra/voice-openai-realtime@0.12.1(@mastra/core@0.24.9(openapi-types@12.1.3)(react@19.2.3)(zod@4.3.5))(zod@4.3.5)':
+    dependencies:
+      '@mastra/core': 0.24.9(openapi-types@12.1.3)(react@19.2.3)(zod@4.3.5)
+      openai-realtime-api: 1.0.8
+      ws: 8.19.0
+      zod: 4.3.5
+      zod-to-json-schema: 3.25.1(zod@4.3.5)
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
   '@mongodb-js/saslprep@1.4.4':
     dependencies:
@@ -8629,6 +8659,8 @@ snapshots:
 
   nanoid@3.3.11: {}
 
+  nanoid@5.1.6: {}
+
   negotiator@0.6.3: {}
 
   negotiator@1.0.0: {}
@@ -8703,6 +8735,14 @@ snapshots:
       define-lazy-prop: 3.0.0
       is-inside-container: 1.0.0
       wsl-utils: 0.1.0
+
+  openai-realtime-api@1.0.8:
+    dependencies:
+      nanoid: 5.1.6
+      ws: 8.19.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
   openapi-types@12.1.3: {}
 

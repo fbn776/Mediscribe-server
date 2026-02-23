@@ -1,7 +1,9 @@
 import {type WebSocket, WebSocketServer} from "ws";
+import http from "http";
 
-export function dev_websocket_logger(env: string = process.env.ENVIRONMENT || "development", wss: WebSocketServer) {
+export function dev_websocket_logger(env: string = process.env.ENVIRONMENT || "development", server: http.Server) {
     if (env === "development") {
+        const wss = new WebSocketServer({ server, path: "/logs" });
         const logSubscribers = new Set<WebSocket>();
         const originalStdoutWrite = process.stdout.write.bind(process.stdout);
         const originalStderrWrite = process.stderr.write.bind(process.stderr);
@@ -24,16 +26,13 @@ export function dev_websocket_logger(env: string = process.env.ENVIRONMENT || "d
             return originalStderrWrite(chunk, encoding, cb);
         };
 
-        wss.on("connection", (ws, req) => {
-            const url = req.url || "";
-            if (url === "/logs") {
-                logSubscribers.add(ws);
-                ws.send(JSON.stringify({type: "info", data: "Connected to log stream"}));
+        wss.on("connection", (ws) => {
+            logSubscribers.add(ws);
+            ws.send(JSON.stringify({type: "info", data: "Connected to log stream"}));
 
-                ws.on("close", () => {
-                    logSubscribers.delete(ws);
-                });
-            }
+            ws.on("close", () => {
+                logSubscribers.delete(ws);
+            });
         });
     }
 }

@@ -36,6 +36,15 @@ export function setAccessControl(access_type: string) {
     }
 }
 
+export function containsArabic(text: string) {
+    const arabicRegex = /[\u0600-\u06FF]/;
+    return arabicRegex.test(text);
+}
+
+export function removeArabic(text: string) {
+    return text.replace(/\p{Script=Arabic}+/gu, '');
+}
+
 /**
  * Decodes JWT and returns it
  * @param req {Express.Request}

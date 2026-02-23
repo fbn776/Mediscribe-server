@@ -6,12 +6,11 @@ import {connectDB} from "./db/config";
 import authRouter from "./routes/auth-routes";
 import userRouter from "./routes/users-routes";
 import http from "http";
-import {dev_websocket_logger} from "./dev/logs/dev_websocket_logger";
+// import {dev_websocket_logger} from "./dev/logs/dev_websocket_logger";
 import devRouter from "./routes/dev-routes";
 import patientsRoutes from "./routes/patients-routes";
 import sessionRoutes from "./routes/session-routes";
-import {WebSocketServer} from "ws";
-import initClientSttGatewayWebSocket from "./websocket/client-stt-gateway";
+import {createSTTWebSocketServer} from "./ai/stt-handler";
 
 require('dotenv').config();
 
@@ -20,11 +19,10 @@ const app = express();
 const server = http.createServer(app);
 const env = process.env.ENVIRONMENT || 'development';
 
-const wss = new WebSocketServer({server});
 
 if (env === 'development') {
     app.use(morgan('dev'));
-    dev_websocket_logger(env, wss);
+    // dev_websocket_logger(env, server);
 }
 
 // delay: TODO - for testing purposes only
@@ -37,11 +35,10 @@ app.use(bodyParser.urlencoded({limit: '100mb', extended: true}));
 app.use(express.json());
 
 app.use(cors({
-    origin: ["http://localhost:3000"],
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
-    credentials: true,
+    "origin": "*",
+    "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+    "preflightContinue": false,
+    "optionsSuccessStatus": 204
 }));
 
 app.use('/system_generated', express.static(__dirname + '/system_generated'));
@@ -55,12 +52,15 @@ if (env === "development") {
 
 connectDB();
 
+createSTTWebSocketServer(server, "/stt");
+
 //Invoking server port connection
 server.listen(process.env.NODE_PORT, () => {
     console.log(`Server listening on port ${process.env.NODE_PORT}`);
     if (env === 'development') {
         console.log(`WebSocket server ready at ws://localhost:${process.env.NODE_PORT}`);
     }
+
 });
 
 app.get('/is-dev', (req, res) => {
@@ -81,7 +81,6 @@ app.use(userRouter);
 app.use(patientsRoutes);
 app.use(sessionRoutes);
 
-initClientSttGatewayWebSocket(wss);
 
 if( env === 'development'){
     app.use(devRouter);
