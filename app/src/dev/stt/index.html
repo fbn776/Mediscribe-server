@@ -519,6 +519,7 @@
         let mediaStream = null;
         let audioWorklet = null;
         let fullTranscript = '';
+        let wsReady = false; // true once server sends "connected" (after init handshake)
 
         // Update status display
         function updateStatus(status, text) {
@@ -553,11 +554,12 @@
         }
 
         // Initialize WebSocket connection
-        function connectWebSocket() {
+        function connectWebSocket(sessionId) {
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = `${protocol}//${window.location.host}/stt`;
 
             websocket = new WebSocket(wsUrl);
+            wsReady = false;
 
             websocket.onopen = () => {
                 console.log('[WS] Connected to server');
@@ -569,9 +571,19 @@
 
                     switch (message.type) {
                         case 'status':
-                            if (message.status === 'connecting') {
+                            if (message.status === 'waiting_for_init') {
+                                // Send init payload before anything else
+                                const initPayload = {
+                                    language: 'en',
+                                    session_id: sessionId,
+                                };
+                                websocket.send(JSON.stringify(initPayload));
+                                console.log('[WS] Init sent:', initPayload);
+                                updateStatus('connecting', 'Connecting to AI...');
+                            } else if (message.status === 'connecting') {
                                 updateStatus('connecting', 'Connecting to AI...');
                             } else if (message.status === 'connected') {
+                                wsReady = true;
                                 updateStatus('connected', 'Listening...');
                             }
                             break;
@@ -598,6 +610,7 @@
 
             websocket.onclose = () => {
                 console.log('[WS] Connection closed');
+                wsReady = false;
                 if (isRecording) {
                     updateStatus('', 'Connection lost');
                 }
@@ -623,8 +636,11 @@
                 // Create audio context
                 audioContext = new AudioContext({ sampleRate: 24000 });
 
-                // Connect WebSocket
-                connectWebSocket();
+                // Generate a dev session ID (replace with a real one when integrating)
+                const sessionId = 'dev-' + Date.now();
+
+                // Connect WebSocket (init payload is sent automatically on waiting_for_init)
+                connectWebSocket(sessionId);
 
                 // Wait for WebSocket to open
                 await new Promise((resolve, reject) => {
@@ -684,7 +700,8 @@
                 audioWorklet = new AudioWorkletNode(audioContext, 'pcm-processor');
 
                 audioWorklet.port.onmessage = (event) => {
-                    if (websocket && websocket.readyState === WebSocket.OPEN) {
+                    // Only send audio once the server has confirmed ready (after init handshake)
+                    if (wsReady && websocket && websocket.readyState === WebSocket.OPEN) {
                         websocket.send(event.data);
                     }
                 };
