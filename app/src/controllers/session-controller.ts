@@ -4,6 +4,7 @@ import {error_function, success_function} from "../utils/response-handler";
 import {handleControllerError} from "../utils/utils";
 import {createSessionSchema, updateSessionSchema} from "../schemas/sessions-schema";
 import mongoose from "mongoose";
+import Transcripts from "../db/models/transcripts";
 
 const SessionController = {
     getAll: async (req: Request, res: Response) => {
@@ -247,6 +248,26 @@ const SessionController = {
                 status: 200,
                 message: "Session notes updated successfully"
             }))
+        } catch (error) {
+            handleControllerError({res, error});
+        }
+    },
+
+    getSessionTranscripts: async (req: Request, res: Response) => {
+        try {
+            const {sessionID} = req.params;
+
+            const session = await Transcripts.find({
+                session: sessionID
+            })
+                .sort({createdAt: 1});
+
+
+            return res.status(200).send(success_function({
+                status: 200,
+                message: "Session conversations fetched successfully",
+                data: session
+            }));
         } catch (error) {
             handleControllerError({res, error});
         }

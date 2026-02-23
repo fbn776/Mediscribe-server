@@ -23,13 +23,6 @@ export interface IProcessedType {
     message_ids: string[]
 }
 
-export interface ICorrectedType {
-    type: "corrected",
-    id: string,
-    text: string,
-    message_ids: string[]
-}
-
 export interface IHighlightType {
     type: "highlight",
     id: string,
@@ -44,7 +37,7 @@ export interface ISummarizedType {
     message_ids: string[]
 }
 
-export type ITranscriptMessage = ITranscriptType | IStatusType | IErrorType | IProcessedType | ICorrectedType | IHighlightType | ISummarizedType;
+export type ITranscriptMessage = ITranscriptType | IStatusType | IErrorType | IProcessedType | IHighlightType | ISummarizedType;
 
 
 export interface IInitMessage {

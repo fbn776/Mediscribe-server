@@ -11,6 +11,8 @@ SessionRoutes.put("/sessions/:id", setAccessControl('1,2,3'), SessionController.
 SessionRoutes.delete("/sessions/:id", setAccessControl('1,2,3'), SessionController.deleteById);
 
 
+SessionRoutes.get("/sessions/transcripts/:sessionID", SessionController.getSessionTranscripts);
+
 SessionRoutes.patch("/sessions/note/:id", setAccessControl('1,2,3'), SessionController.updateSessionNote);
 
 

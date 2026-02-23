@@ -5,6 +5,7 @@ import {TranscriptStore} from "./utils/transcript-store";
 import {v4 as uuidv4} from 'uuid';
 import {IInitMessage, ITranscriptMessage} from "../types/transcript";
 import {processTranscript} from "./utils/process-transcript";
+import transcriptInsertor from "../helpers/transcript-insertor";
 
 
 /**
@@ -79,6 +80,14 @@ export function createSTTWebSocketServer(server: http.Server, path: string = "/s
                             role: "user",
                             final: true,
                         });
+
+                        transcriptInsertor({
+                            type: "transcript",
+                            session: init.session_id,
+                            message_id: id,
+                            text: text,
+                            speaker: "user"
+                        })
 
                         store.add(id, text);
                         processTranscript(text, init, store, sendToClient).catch((err) =>

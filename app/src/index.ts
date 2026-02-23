@@ -10,6 +10,7 @@ import http from "http";
 import devRouter from "./routes/dev-routes";
 import patientsRoutes from "./routes/patients-routes";
 import sessionRoutes from "./routes/session-routes";
+import chatRoutes from "./routes/chat-routes";
 import {createSTTWebSocketServer} from "./ai/stt-handler";
 
 require('dotenv').config();
@@ -35,11 +36,19 @@ app.use(bodyParser.urlencoded({limit: '100mb', extended: true}));
 app.use(express.json());
 
 app.use(cors({
-    "origin": "*",
-    "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
-    "preflightContinue": false,
-    "optionsSuccessStatus": 204
+    origin: ["http://localhost:3000"],
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+    credentials: true,
 }));
+
+// app.use(cors({
+//     "origin": "*",
+//     "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+//     "preflightContinue": false,
+//     "optionsSuccessStatus": 204
+// }));
 
 app.use('/system_generated', express.static(__dirname + '/system_generated'));
 app.use('/uploads', express.static(__dirname + '/uploads'));
@@ -80,6 +89,7 @@ app.use(authRouter);
 app.use(userRouter);
 app.use(patientsRoutes);
 app.use(sessionRoutes);
+app.use(chatRoutes);
 
 
 if( env === 'development'){

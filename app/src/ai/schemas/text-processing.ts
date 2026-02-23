@@ -1,12 +1,11 @@
 import {z} from "zod";
 
-// ── Per-operation result schemas ──────────────────────────────────────────────
 
-export const CorrectedSchema = z.object({
-    type: z.literal("corrected"),
-    text: z.string().describe("Grammar/spelling corrected version of the transcript"),
-    message_ids: z.array(z.string()).describe("IDs of source transcript messages"),
-});
+// export const CorrectedSchema = z.object({
+//     type: z.literal("corrected"),
+//     text: z.string().describe("Grammar/spelling corrected version of the transcript"),
+//     message_ids: z.array(z.string()).describe("IDs of source transcript messages"),
+// });
 
 export const HighlightSchema = z.object({
     type: z.literal("highlight"),
@@ -22,7 +21,6 @@ export const SummarizedSchema = z.object({
     message_ids: z.array(z.string()).describe("IDs of source transcript messages"),
 });
 
-// ── Agent structured-output schema ───────────────────────────────────────────
 
 /**
  * What the processing agent returns for a given batch of transcript messages.
@@ -31,9 +29,6 @@ export const SummarizedSchema = z.object({
  * applicable given the length / content of the supplied text.
  */
 export const ProcessingResultSchema = z.object({
-    corrected: CorrectedSchema.nullable().describe(
-        "Corrected text, or null if no correction was needed / text too short"
-    ),
     highlight: HighlightSchema.nullable().describe(
         "Text with highlighted medical terms, or null if none were found / text too short"
     ),
@@ -43,7 +38,6 @@ export const ProcessingResultSchema = z.object({
 });
 
 export type TProcessingResult = z.infer<typeof ProcessingResultSchema>;
-export type TCorrected = z.infer<typeof CorrectedSchema>;
 export type THighlight = z.infer<typeof HighlightSchema>;
 export type TSummarized = z.infer<typeof SummarizedSchema>;
 

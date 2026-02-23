@@ -3,9 +3,10 @@ import {IInitMessage, ITranscriptMessage} from "../../types/transcript";
 import {TranscriptStore} from "./transcript-store";
 import {processingAgent} from "../agents/processing-agent";
 import {ProcessingResultSchema, TProcessingResult} from "../schemas/text-processing";
+import transcriptInsertor from "../../helpers/transcript-insertor";
 
 /** Minimum number of words in unprocessed text before we even try. */
-const MIN_WORDS = 20;
+const MIN_WORDS = 10;
 
 /** Minimum number of NEW messages since the last run before we try again. */
 const MIN_NEW_MESSAGES = 1;
@@ -82,16 +83,15 @@ export async function processTranscript(
 
         const msgId = uuidv4();
 
-        if (output.corrected) {
-            sendToClient({
-                type: "corrected",
-                id: msgId,
-                text: output.corrected.text,
-                message_ids: messageIds,
-            });
-        }
-
         if (output.highlight) {
+            transcriptInsertor({
+                type: "highlight",
+                session: initData.session_id,
+                message_id: msgId,
+                text: output.highlight.text,
+                speaker: "user"
+            })
+
             sendToClient({
                 type: "highlight",
                 id: msgId,
@@ -101,6 +101,14 @@ export async function processTranscript(
         }
 
         if (output.summarized) {
+            transcriptInsertor({
+                type: "summarized",
+                session: initData.session_id,
+                message_id: msgId,
+                text: output.summarized.text,
+                speaker: "user"
+            })
+
             sendToClient({
                 type: "summarized",
                 id: msgId,
@@ -108,15 +116,9 @@ export async function processTranscript(
                 message_ids: messageIds,
             });
         }
-
-        console.log(
-            `[STT] [process] Done — ` +
-            `corrected=${!!output.corrected} highlight=${!!output.highlight} summarized=${!!output.summarized}`
-        );
     } catch (err) {
         console.error("[STT] [process] Agent error:", err);
-        // Roll back the mark so the batch is retried on the next transcript
-        store.getUnprocessed(); // no-op, but signals intent
-        lastRunAtMap.set(store, 0); // reset debounce so a retry can happen
+        store.getUnprocessed();
+        lastRunAtMap.set(store, 0);
     }
 }
