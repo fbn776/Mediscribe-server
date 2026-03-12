@@ -1,26 +1,18 @@
 import type { Request, Response } from "express";
 import mongoose from "mongoose";
-import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
 import ChatConversations from "../db/models/chat-conversations";
 import ChatMessages from "../db/models/chat-messages";
 import { error_function, success_function } from "../utils/response-handler";
 import { handleControllerError } from "../utils/utils";
+import { chatAgent } from "../ai/agents/chat-agent";
 import {
     createConversationSchema,
     sendMessageSchema,
     updateConversationSchema,
 } from "../schemas/chat-schema";
 
-// Default system prompt for the medical assistant
-const DEFAULT_SYSTEM_PROMPT = `You are Mediscribe AI, a helpful medical assistant.
-You assist doctors and healthcare professionals with clinical questions, documentation, and medical knowledge.
-Always be precise, evidence-based, and indicate when a question is outside your competence.
-Never provide direct diagnoses for real patients without professional evaluation.`;
+// System prompt and model are now configured in the chat agent (src/ai/agents/chat-agent.ts)
 
-const DEFAULT_MODEL = process.env.CHAT_MODEL ?? "gpt-4o-mini";
-
-// ─── Conversations ────────────────────────────────────────────────────────────
 
 const ChatController = {
     /**
@@ -63,7 +55,7 @@ const ChatController = {
         const parsed = createConversationSchema.safeParse(req.body);
         if (!parsed.success) {
             return res.status(400).json(
-                error_function({ status: 400, message: parsed.error.errors[0].message })
+                error_function({ status: 400, message: parsed.error.issues })
             );
         }
 
@@ -96,7 +88,7 @@ const ChatController = {
      */
     getConversation: async (req: Request, res: Response) => {
         try {
-            const { id } = req.params;
+            const id = req?.params?.id as string | undefined;
 
             if (!id || !mongoose.Types.ObjectId.isValid(id)) {
                 return res.status(400).json(
@@ -140,12 +132,12 @@ const ChatController = {
         const parsed = updateConversationSchema.safeParse(req.body);
         if (!parsed.success) {
             return res.status(400).json(
-                error_function({ status: 400, message: parsed.error.errors[0].message })
+                error_function({ status: 400, message: parsed.error.issues })
             );
         }
 
         try {
-            const { id } = req.params;
+            const id = req?.params?.id as string | undefined;
 
             if (!id || !mongoose.Types.ObjectId.isValid(id)) {
                 return res.status(400).json(
@@ -183,7 +175,7 @@ const ChatController = {
      */
     deleteConversation: async (req: Request, res: Response) => {
         try {
-            const { id } = req.params;
+            const id = req?.params?.id as string | undefined;
 
             if (!id || !mongoose.Types.ObjectId.isValid(id)) {
                 return res.status(400).json(
@@ -227,12 +219,12 @@ const ChatController = {
         const parsed = sendMessageSchema.safeParse(req.body);
         if (!parsed.success) {
             return res.status(400).json(
-                error_function({ status: 400, message: parsed.error.errors[0].message })
+                error_function({ status: 400, message: parsed.error.issues })
             );
         }
 
         try {
-            const { id } = req.params;
+            const id = req?.params?.id as string | undefined;
 
             if (!id || !mongoose.Types.ObjectId.isValid(id)) {
                 return res.status(400).json(
@@ -252,45 +244,42 @@ const ChatController = {
                 );
             }
 
-            const { message, model } = parsed.data;
-            const modelId = model ?? DEFAULT_MODEL;
+            const { message } = parsed.data;
+            const userId = req.user!._id.toString();
 
-            // Persist the user's message first
+            // Persist the user's message in MongoDB
             const userMessage = await ChatMessages.create({
                 conversation: id,
                 role: "user",
                 content: message,
             });
 
-            // Build the message history to send to the LLM
-            const history = await ChatMessages.find({ conversation: id })
-                .sort({ createdAt: 1 })
-                .lean();
+            // Build generate options — memory handles conversation history automatically
+            const generateOptions: Record<string, any> = {
+                memory: {
+                    thread: id as string,
+                    resource: userId,
+                },
+            };
 
-            const llmMessages = history.map((m) => ({
-                role: m.role as "user" | "assistant" | "system",
-                content: m.content,
-            }));
+            // Override system prompt if the conversation has a custom one
+            if (conversation.systemPrompt) {
+                generateOptions.instructions = conversation.systemPrompt;
+            }
 
-            // Determine system prompt
-            const systemPrompt = conversation.systemPrompt ?? DEFAULT_SYSTEM_PROMPT;
+            // Call the agent — Mastra Memory recalls prior messages automatically
+            const result = await chatAgent.generate(message, generateOptions);
 
-            // Call the LLM
-            const result = await generateText({
-                model: openai(modelId),
-                system: systemPrompt,
-                messages: llmMessages,
-            });
-
-            // Persist the assistant reply
+            // Persist the assistant reply in MongoDB
             const assistantMessage = await ChatMessages.create({
+                // @ts-ignore
                 conversation: id,
                 role: "assistant",
                 content: result.text,
                 usage: {
-                    promptTokens: result.usage?.promptTokens ?? null,
-                    completionTokens: result.usage?.completionTokens ?? null,
-                    totalTokens: result.usage?.totalTokens ?? null,
+                    promptTokens: (result.usage as any)?.promptTokens ?? null,
+                    completionTokens: (result.usage as any)?.completionTokens ?? null,
+                    totalTokens: (result.usage as any)?.totalTokens ?? null,
                 },
                 finishReason: result.finishReason ?? null,
             });
@@ -319,7 +308,7 @@ const ChatController = {
      */
     getMessages: async (req: Request, res: Response) => {
         try {
-            const { id } = req.params;
+            const id = req?.params?.id as string | undefined;
 
             if (!id || !mongoose.Types.ObjectId.isValid(id)) {
                 return res.status(400).json(
@@ -370,7 +359,7 @@ const ChatController = {
      */
     clearMessages: async (req: Request, res: Response) => {
         try {
-            const { id } = req.params;
+            const id = req?.params?.id as string | undefined;
 
             if (!id || !mongoose.Types.ObjectId.isValid(id)) {
                 return res.status(400).json(

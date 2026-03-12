@@ -11,7 +11,10 @@ import devRouter from "./routes/dev-routes";
 import patientsRoutes from "./routes/patients-routes";
 import sessionRoutes from "./routes/session-routes";
 import chatRoutes from "./routes/chat-routes";
+import dashboardRoutes from "./routes/dashboard-routes";
 import {createSTTWebSocketServer} from "./ai/stt-handler";
+import fs from 'fs';
+import path from 'path';
 
 require('dotenv').config();
 
@@ -59,6 +62,27 @@ if (env === "development") {
     app.use('/dev', express.static(__dirname + '/dev'));
 }
 
+// Initialize uploads directory structure
+function initializeUploadsDirectory() {
+    const uploadsDir = path.join(__dirname, '../uploads');
+    const documentsDir = path.join(uploadsDir, 'documents');
+    const patientsDir = path.join(documentsDir, 'patients');
+    const sessionsDir = path.join(documentsDir, 'sessions');
+
+    // Create directories if they don't exist
+    [uploadsDir, documentsDir, patientsDir, sessionsDir].forEach(dir => {
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+            console.log(`[Uploads] Created directory: ${dir}`);
+        }
+    });
+
+    console.log('[Uploads] Directory structure initialized');
+}
+
+// Initialize uploads directory before connecting to DB
+initializeUploadsDirectory();
+
 connectDB();
 
 createSTTWebSocketServer(server, "/stt");
@@ -90,6 +114,7 @@ app.use(userRouter);
 app.use(patientsRoutes);
 app.use(sessionRoutes);
 app.use(chatRoutes);
+app.use(dashboardRoutes);
 
 
 if( env === 'development'){

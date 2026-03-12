@@ -37,7 +37,14 @@ export interface ISummarizedType {
     message_ids: string[]
 }
 
-export type ITranscriptMessage = ITranscriptType | IStatusType | IErrorType | IProcessedType | IHighlightType | ISummarizedType;
+export interface IEmbeddedType {
+    type: "embedded",
+    id: string,
+    text: string,
+    message_ids: string[]
+}
+
+export type ITranscriptMessage = ITranscriptType | IStatusType | IErrorType | IProcessedType | IHighlightType | ISummarizedType | IEmbeddedType;
 
 
 export interface IInitMessage {

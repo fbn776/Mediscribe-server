@@ -68,7 +68,7 @@ export function createSTTWebSocketServer(server: http.Server, path: string = "/s
                 );
 
                 voice.on("writing", ({text, role}: { text: string; role: string }) => {
-                    // console.log("[STT] Writing event:", {text, role});
+                    console.log("[STT] Writing event:", {text, role});
                     if (role === "user") {
                         console.log(`[STT] User transcription: ${text}`);
                         const id = uuidv4();

@@ -6,7 +6,7 @@ const sessionsSchema = new mongoose.Schema({
     title: {type: String, required: true},
 
     // Doctor and patient references
-    added_by: {type: mongoose.Schema.Types.ObjectId, ref: "user", required: true},
+    added_by: {type: mongoose.Schema.Types.ObjectId, ref: "users", required: true},
     patient: {type: mongoose.Schema.Types.ObjectId, ref: "patients", required: true},
 
     notes: {type: String, default: ""},

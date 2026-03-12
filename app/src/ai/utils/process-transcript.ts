@@ -1,9 +1,12 @@
-import {v4 as uuidv4} from "uuid";
-import {IInitMessage, ITranscriptMessage} from "../../types/transcript";
-import {TranscriptStore} from "./transcript-store";
-import {processingAgent} from "../agents/processing-agent";
-import {ProcessingResultSchema, TProcessingResult} from "../schemas/text-processing";
+import { v4 as uuidv4 } from "uuid";
+import { embed } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { IInitMessage, ITranscriptMessage } from "../../types/transcript";
+import { TranscriptStore } from "./transcript-store";
+import { processingAgent } from "../agents/processing-agent";
+import { ProcessingResultSchema, TProcessingResult } from "../schemas/text-processing";
 import transcriptInsertor from "../../helpers/transcript-insertor";
+import { chromaStore, TRANSCRIPT_INDEX, ensureTranscriptIndex } from "./vector-store";
 
 /** Minimum number of words in unprocessed text before we even try. */
 const MIN_WORDS = 10;
@@ -115,6 +118,33 @@ export async function processTranscript(
                 text: output.summarized.text,
                 message_ids: messageIds,
             });
+        }
+
+        // ── Embed and upsert transcript into Chroma for RAG ──
+        try {
+            await ensureTranscriptIndex();
+            const { embedding } = await embed({
+                model: openai.embedding("text-embedding-3-small"),
+                value: combinedText,
+            });
+
+            sendToClient({
+                type: "embedded",
+                id: msgId,
+                text: combinedText,
+                message_ids: messageIds,
+            })
+
+            await chromaStore.upsert({
+                indexName: TRANSCRIPT_INDEX,
+                vectors: [embedding],
+                metadata: [{ session_id: initData.session_id, timestamp: Date.now() }],
+                ids: [msgId],
+                documents: [combinedText],
+            });
+            console.log(`[STT] [process] Upserted transcript to Chroma (id=${msgId})`);
+        } catch (embedErr) {
+            console.error("[STT] [process] Chroma upsert error:", embedErr);
         }
     } catch (err) {
         console.error("[STT] [process] Agent error:", err);

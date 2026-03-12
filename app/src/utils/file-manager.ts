@@ -2,7 +2,6 @@ import path from 'path';
 import fs from 'fs';
 import dayjs from 'dayjs';
 import { Readable } from 'stream';
-import * as s3 from "./s3-manager";
 
 export const fileUpload = async function (options: {
     multiple?: boolean,
@@ -23,12 +22,12 @@ export const fileUpload = async function (options: {
                 uploadType: 's3' //s3 or local
             };
 
-            // Merge default options with user-provided options
-            const config = { ...defaultOptions, ...options };
+            // Merge default options with user-provided options (but force local)
+            const config = { ...defaultOptions, ...options, uploadType: 'local' };
 
             const uploadDir = config.uploadPath;
-            // Ensure upload directory exists, if uploading locally
-            if (config.uploadType === 'local' && !fs.existsSync(uploadDir)) {
+            // Ensure upload directory exists
+            if (!fs.existsSync(uploadDir)) {
                 fs.mkdirSync(uploadDir, { recursive: true });
             }
 
@@ -55,37 +54,22 @@ export const fileUpload = async function (options: {
                     const filename_with_extension = filename + path.extname(file.originalname);
                     const filepath = path.join(uploadDir, filename_with_extension);
 
-                    let s3_path = '';
+                    // Save file locally
+                    await new Promise((resolve, reject) => {
+                        const writeStream = fs.createWriteStream(filepath);
+                        const bufferStream = new Readable();
+                        bufferStream.push(file.buffer);
+                        bufferStream.push(null);
 
-                    if (config.uploadType == 's3') {
-                        s3_path = await s3.uploadFile(
-                            {
-                                file: file.buffer,
-                                fileName: filename,
-                                fileExtension: file.mimetype.split('/')[1],
-                                contentType: file.mimetype,
-                                path: uploadDir
-                            }
-                        );
-                    }
-                    else {
-                        // Create a write stream
-                        await new Promise((resolve, reject) => {
-                            const writeStream = fs.createWriteStream(filepath);
-                            const bufferStream = new Readable();
-                            bufferStream.push(file.buffer);
-                            bufferStream.push(null);
-
-                            bufferStream.pipe(writeStream);
-                            // @ts-ignore
-                            writeStream.on('finish', resolve);
-                            writeStream.on('error', reject);
-                        });
-                    }
+                        bufferStream.pipe(writeStream);
+                        // @ts-ignore
+                        writeStream.on('finish', resolve);
+                        writeStream.on('error', reject);
+                    });
 
                     return {
                         name: filename_with_extension,
-                        path: (config?.uploadType == "s3") ? s3_path : filepath,
+                        path: filepath,
                         mime_type: file.mimetype,
                         size: file.size
                     };
